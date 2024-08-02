@@ -112,7 +112,6 @@ location_model = location_api.model(
     {
         "latitude": fields.Float(required=True, description="latitude"),
         "longitude": fields.Float(required=True, description="longitude"),
-        "page": fields.Integer(required=False, description="Page number", default=1),
     },
 )
 
@@ -159,15 +158,10 @@ class Location(Resource):
         input_data = request.get_json()
         latitude = input_data["latitude"]
         longitude = input_data["longitude"]
-        page = input_data.get("page", 1)  # 기본값은 1
 
 
         try:
-            rows = fetch_locations(latitude, longitude)
-            total_count = len(rows)
-            start = (page - 1) * 10
-            end = start + 10
-            paginated_rows = rows[start:end]
+            rows = fetch_locations(latitude, longitude)        
 
             result = [
                 {
@@ -181,9 +175,9 @@ class Location(Resource):
                     "operation_time": "월~금 09:00~18:00",
                     "friends": random.randrange(0, 9),
                 }
-                for index, row in enumerate(paginated_rows, start=start)  # 인덱스 조정
+                for index, row in enumerate(rows, start=0)  # 인덱스 조정
             ]
-            return jsonify({"result": result, "total_count": total_count})
+            return jsonify({"result": result})
         except Exception as e:
             return handle_api_error(e, "Error occurred while fetching locations")
 
