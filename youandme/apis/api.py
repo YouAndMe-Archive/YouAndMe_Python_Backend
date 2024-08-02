@@ -126,7 +126,7 @@ def fetch_locations(latitude, longitude):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     query = """
-    SELECT * FROM location
+    SELECT name, addr1, addr2, latitude, longitude, phone FROM location
     WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
     """
     cursor.execute(
@@ -141,7 +141,7 @@ def fetch_location_by_keyword(keyword):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     query = """
-    SELECT * FROM location
+    SELECT name, addr1, addr2, latitude, longitude, phone FROM location
     WHERE name LIKE ?
     """
     cursor.execute(query, (f"%{keyword}%",))
@@ -221,7 +221,7 @@ class LocationSearch(Resource):
 
             result = [
                 {
-                    "id": index,  # 인덱스 값을 추가
+                    "id": index,
                     "facility_name": row[0],
                     "road_name_addr": row[1],
                     "number_addr": row[2],
