@@ -157,7 +157,7 @@ class Location(Resource):
                     "longitude": row[4],
                     "phone_number": row[5],
                     "operation_time": "월~금 09:00~18:00",
-                    "freinds": random.randrange(0, 9),
+                    "friends": random.randrange(0, 9),
                 }
                 for index, row in enumerate(
                     rows
