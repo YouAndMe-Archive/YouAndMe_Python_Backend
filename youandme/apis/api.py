@@ -66,6 +66,7 @@ def call_openai_api(prompt, image_url):
     except requests.RequestException as e:
         raise Exception("Failed to communicate with OpenAI API") from e
 
+
 @image_processing_api.route("/image-processing")
 class ImageProcessing(Resource):
     @image_processing_api.expect(image_processing_model)
@@ -111,6 +112,7 @@ location_model = location_api.model(
     {
         "latitude": fields.Float(required=True, description="latitude"),
         "longitude": fields.Float(required=True, description="longitude"),
+        "page": fields.Integer(required=False, description="Page number", default=1),
     },
 )
 
@@ -128,11 +130,24 @@ def fetch_locations(latitude, longitude):
     WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
     """
     cursor.execute(
-        query, (latitude - 0.1, latitude + 0.1, longitude - 0.1, longitude + 0.1)
+        query, (latitude - 0.05, latitude + 0.05, longitude - 0.05, longitude + 0.05)
     )
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+def fetch_location_by_keyword(keyword):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    query = """
+    SELECT * FROM location
+    WHERE name LIKE ?
+    """
+    cursor.execute(query, (f"%{keyword}%",))
+    row = cursor.fetchall()  # 단일 행 반환
+    conn.close()
+    return row
 
 
 @location_api.route("/locations")
@@ -140,13 +155,70 @@ class Location(Resource):
     @location_api.expect(location_model)
     @location_api.response(200, "Success", location_response_model)
     @location_api.response(500, "Internal Server Error")
-    def get(self):
+    def post(self):
         input_data = request.get_json()
         latitude = input_data["latitude"]
         longitude = input_data["longitude"]
+        page = input_data.get("page", 1)  # 기본값은 1
+
 
         try:
             rows = fetch_locations(latitude, longitude)
+            total_count = len(rows)
+            start = (page - 1) * 10
+            end = start + 10
+            paginated_rows = rows[start:end]
+
+            result = [
+                {
+                    "id": index,  # 인덱스 값을 추가
+                    "facility_name": row[0],
+                    "road_name_addr": row[1],
+                    "number_addr": row[2],
+                    "latitude": row[3],
+                    "longitude": row[4],
+                    "phone_number": row[5],
+                    "operation_time": "월~금 09:00~18:00",
+                    "friends": random.randrange(0, 9),
+                }
+                for index, row in enumerate(paginated_rows, start=start)  # 인덱스 조정
+            ]
+            return jsonify({"result": result, "total_count": total_count})
+        except Exception as e:
+            return handle_api_error(e, "Error occurred while fetching locations")
+
+
+@location_api.route("/search")
+class LocationSearch(Resource):
+    @location_api.expect(
+        location_api.model(
+            "SearchModel",
+            {
+                "keyword": fields.String(required=True, description="Search keyword"),
+                "page": fields.Integer(
+                    required=False, description="Page number", default=1
+                ),
+            },
+        )
+    )
+    @location_api.response(200, "Success", location_response_model)
+    @location_api.response(500, "Internal Server Error")
+    def post(self):
+        input_data = request.get_json()
+        keyword = input_data["keyword"]
+        page = input_data.get("page", 1)  # 기본값은 1
+
+        try:
+            location = fetch_location_by_keyword(keyword)
+
+            total_count = len(location)
+            start = (page - 1) * 10
+            end = start + 10
+            paginated_location = location[start:end]
+
+            if not paginated_location:
+                return jsonify({"result": [], "total_count": total_count})
+
             result = [
                 {
                     "id": index,  # 인덱스 값을 추가
@@ -160,9 +232,10 @@ class Location(Resource):
                     "friends": random.randrange(0, 9),
                 }
                 for index, row in enumerate(
-                    rows
-                )  # enumerate로 인덱스와 값 함께 가져오기
+                    paginated_location, start=start
+                )  # 인덱스 조정
             ]
-            return jsonify({"result": result})
+
+            return jsonify({"result": result, "total_count": total_count})
         except Exception as e:
-            return handle_api_error(e, "Error occurred while fetching locations")
+            return handle_api_error(e, "Error occurred while searching for locations")
