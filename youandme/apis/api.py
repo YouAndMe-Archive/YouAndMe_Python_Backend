@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import request, jsonify
 from flask_restx import Resource, fields
 from youandme import image_processing_api, location_api
+import random
 
 load_dotenv()
 
@@ -156,6 +157,7 @@ class Location(Resource):
                     "longitude": row[4],
                     "phone_number": row[5],
                     "operation_time": "월~금 09:00~18:00",
+                    "freinds": random.randrange(0, 9),
                 }
                 for index, row in enumerate(
                     rows
