@@ -12,6 +12,6 @@ api = Api(
 )
 image_processing_api = api.namespace("api/v1", description="Flask API")
 location_api = api.namespace("api/v1", description="Flask API")
-CORS(app)
+CORS(app, resources={r'*': {'origins': 'https://www.re-bom.shop/'}})
 
 from youandme.apis import *  # apis import
