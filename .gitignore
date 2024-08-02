@@ -1,7 +1,3 @@
 # created by virtualenv automatically
 .env
-createDB.py
-insertDB.py
-requirements.txt
-전국노인장애인보호구역표준데이터.csv
 database.db

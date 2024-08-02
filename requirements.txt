@@ -1,0 +1,10 @@
+python-dotenv
+gunicorn
+openai
+Flask
+Flask-Migrate
+Flask-cors
+Flask_restx
+requests
+SQLAlchemy
+pandas
